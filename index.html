@@ -3,23 +3,23 @@
 <script>
 //var inputString=window.prompt("Enter input JOSN");
 var jsonObj={};
-jsonObj["locator"]={};
+jsonObj={};
 function onInput(){
 var inputString = document.getElementById("txtAreaInput").value;
-jsonObj['locator']=JSON.parse(inputString);
+jsonObj=JSON.parse(inputString);
 console.log(jsonObj);
 var stringObj = JSON.stringify(jsonObj);
 console.log(stringObj);
 
 console.log("here"+stringObj);
 
-var path = jsonObj.locator.path;
-console.log(jsonObj.locator.path);
+var path = jsonObj.path;
+console.log(jsonObj.path);
 console.log("Locator & its length: \n"+path+" is "+path.length);
 var count = path.match(/({)/g).length;
-jsonObj['locator']["manipulationPath"]={};
-jsonObj['locator']['manipulationPath']["uuid"]="";
-jsonObj['locator']['manipulationPath']["dynamicValues"]=[];
+jsonObj["manipulationPath"]={};
+jsonObj['manipulationPath']["uuid"]="";
+jsonObj['manipulationPath']["dynamicValues"]=[];
 
 modifyLocatorObj(jsonObj,path,count);
 }
@@ -29,15 +29,16 @@ function modifyLocatorObj(locatorObj,locatorPath,count)
 if(count>0)
 {
 var substr = locatorPath.substring(locatorPath.indexOf("{")+1,locatorPath.indexOf("}"));
-locatorObj['locator']['path']=locatorPath.replace(/(#{)/,"");
-locatorPath=locatorObj['locator']['path']=locatorObj['locator']['path'].replace(/(})/,"");
+locatorObj['path']=locatorPath.replace(/(#{)/,"");
+locatorPath=locatorObj['path']=locatorObj['path'].replace(/(})/,"");
 var arrayObj={};
 arrayObj["uuid"]="";
 arrayObj["replaceText"]=substr;
 arrayObj["replaceWith"]=substr;
 arrayObj["replacingType"]="field";
-arrayObj["manipulationStatements"]=[];
-locatorObj['locator']['manipulationPath']['dynamicValues'].push(arrayObj);
+arrayObj["postManipulations"]={};
+arrayObj['postManipulations']["manipulations"]=[];
+locatorObj['manipulationPath']['dynamicValues'].push(arrayObj);
 count--;
 modifyLocatorObj(locatorObj,locatorPath,count);
 }
@@ -70,7 +71,7 @@ document.getElementById("txtAreaInput").select();
 <p id="header"></p>
 <span>Original JSON :</span><br>
 <textarea id="txtAreaInput" rows="5" cols="100" onblur="onInput();" onfocus="simplySelect();"></textarea><br>
-<button id="btnConvert">Convert</button></br></br>
+<button id="btnConvert">Convert</button></br><br/>
 <span>Converted JSON :</span><br>
 <textarea id="txtAreaOutput" rows="5" cols="100"></textarea><br>
 <button onclick="copyToClipBoard()">Copy JSON</button
