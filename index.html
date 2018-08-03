@@ -11,12 +11,11 @@ console.log(jsonObj);
 var stringObj = JSON.stringify(jsonObj);
 console.log(stringObj);
 
-console.log("here"+stringObj);
-
 var path = jsonObj.path;
 console.log(jsonObj.path);
 console.log("Locator & its length: \n"+path+" is "+path.length);
 var count = path.match(/({)/g).length;
+console.log(count);
 jsonObj["manipulationPath"]={};
 jsonObj['manipulationPath']["uuid"]="";
 jsonObj['manipulationPath']["dynamicValues"]=[];
@@ -29,18 +28,96 @@ function modifyLocatorObj(locatorObj,locatorPath,count)
 if(count>0)
 {
 var substr = locatorPath.substring(locatorPath.indexOf("{")+1,locatorPath.indexOf("}"));
+console.log("Substr is "+substr);
+
+//chek if there are any methods called in dynamicLocator
+var checkManip = substr.indexOf(".");
+console.log(""+checkManip);
+if(checkManip>0)
+{
+var substr1=substr.substring(0,substr.indexOf("."));
+var methodName=substr.substring(substr.indexOf(".")+1,substr.indexOf("("));
+var methodArgs=substr.substring(substr.indexOf("(")+1,substr.indexOf(")")).split(",");
+console.log(substr1,methodName,methodArgs);
+var vReplaceText = methodArgs[methodArgs.length-1];
+var vreplacingType="field";
+var vreplaceWith="temp1";
+var temp1=vReplaceText.match(/(')/);
+if(temp1!=null)
+{
+vReplaceText=methodArgs[methodArgs.length-1].substring(methodArgs[methodArgs.length-1].indexOf("'")+1,methodArgs[methodArgs.length-1].lastIndexOf("'"));
+vreplacingType="custom";
+}
+locatorPath=locatorPath.replace(substr,vReplaceText);
+console.log(vReplaceText);
+
 locatorObj['path']=locatorPath.replace(/(#{)/,"");
 locatorPath=locatorObj['path']=locatorObj['path'].replace(/(})/,"");
-var arrayObj={};
-arrayObj["uuid"]="";
-arrayObj["replaceText"]=substr;
-arrayObj["replaceWith"]=substr;
-arrayObj["replacingType"]="field";
-arrayObj["postManipulations"]={};
-arrayObj['postManipulations']["manipulations"]=[];
-locatorObj['manipulationPath']['dynamicValues'].push(arrayObj);
+
+var dynamicValuesArrayObj={};
+dynamicValuesArrayObj["uuid"]="";
+dynamicValuesArrayObj["replaceText"]=vReplaceText;
+dynamicValuesArrayObj["replaceWith"]=vreplaceWith;
+dynamicValuesArrayObj["replacingType"]=vreplacingType;
+dynamicValuesArrayObj["postManipulations"]={};
+dynamicValuesArrayObj['postManipulations']["manipulations"]=[];
+
+//creating manipulations(postManipulations>manipulations) array objects template
+var manipulationsArrayObj={};
+manipulationsArrayObj["type"]="method";
+manipulationsArrayObj["methodName"]=methodName;
+manipulationsArrayObj["arguments"]=[];
+//inserting list of arguments into arguments[] array
+for(arg in methodArgs)
+{
+console.log("Inside loop :"+methodArgs[arg]);
+var loopObj={};
+temp1=methodArgs[arg].match(/(')/);
+if(temp1!=null)
+loopObj["value"]=methodArgs[arg].substring(methodArgs[arg].indexOf("'")+1,methodArgs[arg].lastIndexOf("'"));
+else
+loopObj["value"]=methodArgs[arg];
+
+if(temp1!=null)
+loopObj["type"]="custom";
+else
+loopObj["type"]="field";
+
+//pushing each argument into arguments array
+manipulationsArrayObj['arguments'].push(loopObj);
+}
+manipulationsArrayObj["variable"]="temp1";
+manipulationsArrayObj["returnType"]="string";
+var args="";
+for(arg in methodArgs)
+args+=methodArgs[arg]+",";
+args=args.substring(0,args.lastIndexOf(","));
+console.log("Conbined args are herer: "+args);
+manipulationsArrayObj["expression"]="@stringManipuators.replace("+args+")";
+manipulationsArrayObj["nestedStatements"]=[];
+dynamicValuesArrayObj['postManipulations']['manipulations'].push(manipulationsArrayObj);
+
+locatorObj['manipulationPath']['dynamicValues'].push(dynamicValuesArrayObj);
 count--;
 modifyLocatorObj(locatorObj,locatorPath,count);
+
+}
+
+else{
+
+locatorObj['path']=locatorPath.replace(/(#{)/,"");
+locatorPath=locatorObj['path']=locatorObj['path'].replace(/(})/,"");
+var dynamicValuesArrayObj={};
+dynamicValuesArrayObj["uuid"]="";
+dynamicValuesArrayObj["replaceText"]=substr;
+dynamicValuesArrayObj["replaceWith"]=substr;
+dynamicValuesArrayObj["replacingType"]="field";
+dynamicValuesArrayObj["postManipulations"]={};
+dynamicValuesArrayObj['postManipulations']["manipulations"]=[];
+locatorObj['manipulationPath']['dynamicValues'].push(dynamicValuesArrayObj);
+count--;
+modifyLocatorObj(locatorObj,locatorPath,count);
+}
 }
 
 var stringfied = JSON.stringify(locatorObj);
@@ -68,13 +145,15 @@ document.getElementById("txtAreaInput").select();
 </head>
 
 <body>
+<div style="float:left;width:50%;position:absolute;">
 <p id="header"></p>
 <span>Original JSON :</span><br>
-<textarea id="txtAreaInput" rows="5" cols="100" onblur="onInput();" onfocus="simplySelect();"></textarea><br>
-<button id="btnConvert">Convert</button><br/><br/>
+<textarea id="txtAreaInput" rows="5" cols="80" onblur="" onfocus="simplySelect();"></textarea><br>
+<button id="btnConvert" onclick="onInput();">dynamicLocator</button><br/><br/>
 <span>Converted JSON :</span><br>
-<textarea id="txtAreaOutput" rows="5" cols="100"></textarea><br>
-<button onclick="copyToClipBoard()">Copy JSON</button
-
+<textarea id="txtAreaOutput" rows="5" cols="80"></textarea><br>
+<button onclick="copyToClipBoard()">Copy JSON</button><br>
+</div>
+<iframe src="https://jsonformatter-online.com/" style="height:80%;width:50%" align="right"></iframe>
 </body>
 </html>
